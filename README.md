@@ -12,6 +12,13 @@ Esta aplicación funciona como un registro para poder llevar un control de repor
 La aplicación cuenta con inicio de sesión y solo dos roles, uno de administrador con control total y otro de técnico (asignado por defecto para futuras altas) que tiene limitación en cuestión de editar campos.
 Tiene 6 secciones partiendo del dashboard general.
 Toda la aplicación se encuentra desglosada en un árbol de carpetas.
+### Carpetas
+APP
+Contiene lo referente a la aplicación como tal, es decir, controladores, configuraciones, las funciones y las vistas de la página web.
+DATABASE
+Tiene la estructura de creación de la base dedatos y desglosa como es que está estructurada cada tabla.
+PUBLIC
+contiene los archivos del dashboard y login logout
 
 ### Funcionalidades
 - Permite una vista general de los reportes registrados y su estado
