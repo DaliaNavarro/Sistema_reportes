@@ -48,13 +48,38 @@
 <?php endif; ?>
 
 <h2>Archivos</h2>
+
 <?php if (empty($archivos)): ?>
     <p>No hay archivos adjuntos.</p>
 <?php else: ?>
     <?php foreach ($archivos as $archivo): ?>
-        <p><a href="index.php?route=archivo/ver&id=<?= $archivo['id'] ?>" target="_blank"><?= e($archivo['nombre_original']) ?></a></p>
+        <p>
+            <a href="index.php?route=archivo/ver&id=<?= (int)$archivo['id'] ?>" target="_blank">
+                <?= e($archivo['nombre_original']) ?>
+            </a>
+            <small>
+                (<?= e($archivo['fecha_subida']) ?>)
+            </small>
+        </p>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="card">
+    <h3>Adjuntar PDF</h3>
+    <p>MEMORANDUM o alguna otra eviencia PDF.</p>
+
+    <form method="POST" action="index.php?route=reportes/adjuntar" enctype="multipart/form-data">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= (int)$reporte['id'] ?>">
+
+        <label>
+            Archivo PDF
+            <input type="file" name="memorandum" accept=".pdf,application/pdf" required>
+        </label>
+
+        <button type="submit">Adjuntar PDF</button>
+    </form>
+</div>
 
 <h2>Historial</h2>
 <table>

@@ -77,6 +77,10 @@ switch ($route) {
         ReporteController::cambiarEstado();
         break;
 
+    case 'reportes/adjuntar':
+        ReporteController::adjuntarArchivo();
+        break;
+
     case 'reportes/eliminar':
         ReporteController::eliminar();
         break;
@@ -106,6 +110,24 @@ switch ($route) {
         PersonaController::eliminar();
         break;
 
+    /*
+    USUARIOS
+    */
+    case 'usuarios':
+    UsuarioController::index();
+    break;
+
+    case 'usuarios/guardar':
+        UsuarioController::guardar();
+        break;
+
+    case 'usuarios/estado':
+        UsuarioController::cambiarEstado();
+        break;
+
+    case 'usuarios/eliminar':
+        UsuarioController::eliminar();
+        break;
 
     /*
      * DEPARTAMENTOS
@@ -121,24 +143,6 @@ switch ($route) {
 
     case 'departamentos/estado':
         DepartamentoController::cambiarEstado();
-        break;
-    /*
-     *  USUARIOS
-    */    
-    case 'usuarios':
-        UsuarioController::index();
-        break;
-
-    case 'usuarios/guardar':
-         UsuarioController::guardar();
-        break;
-
-    case 'usuarios/estado':
-        UsuarioController::cambiarEstado();
-        break;
-
-    case 'usuarios/eliminar':
-        UsuarioController::eliminar();
         break;
 
 

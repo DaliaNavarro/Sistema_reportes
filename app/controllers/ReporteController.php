@@ -7,8 +7,15 @@ class ReporteController
         Auth::requireLogin();
 
         $db = Database::getConnection();
-        $estado = $_GET['estado'] ?? '';
-        $permitidos = ['REGISTRADO', 'EN_PROCESO', 'ATENDIDO', 'CANCELADO'];
+
+        $estado = strtoupper(trim((string)($_GET['estado'] ?? '')));
+        $departamentoId = (int)($_GET['departamento_id'] ?? 0);
+        $tipoId = (int)($_GET['tipo_problema_id'] ?? 0);
+        $origen = strtoupper(trim((string)($_GET['origen'] ?? '')));
+        $solicitante = trim((string)($_GET['solicitante'] ?? ''));
+
+        $estadosPermitidos = ['REGISTRADO', 'EN_PROCESO', 'ATENDIDO', 'CANCELADO'];
+        $origenesPermitidos = ['MEMORANDUM', 'INFORMAL'];
 
         $sql = "
             SELECT
@@ -20,20 +27,47 @@ class ReporteController
                 r.es_departamento_general,
                 d.nombre AS departamento,
                 p.nombre AS persona,
+                encargado.nombre AS encargado,
                 t.nombre AS tipo
             FROM reportes r
             INNER JOIN departamentos d ON d.id = r.departamento_id
             LEFT JOIN personas p ON p.id = r.persona_id
+            LEFT JOIN personas encargado ON encargado.id = d.encargado_id
             INNER JOIN tipos_problema t ON t.id = r.tipo_problema_id
+            WHERE 1 = 1
         ";
 
         $params = [];
 
-        if (in_array($estado, $permitidos, true)) {
-            $sql .= ' WHERE r.estado = ? ';
+        if (in_array($estado, $estadosPermitidos, true)) {
+            $sql .= ' AND r.estado = ?';
             $params[] = $estado;
         } else {
             $estado = '';
+        }
+
+        if ($departamentoId > 0) {
+            $sql .= ' AND r.departamento_id = ?';
+            $params[] = $departamentoId;
+        }
+
+        if ($tipoId > 0) {
+            $sql .= ' AND r.tipo_problema_id = ?';
+            $params[] = $tipoId;
+        }
+
+        if (in_array($origen, $origenesPermitidos, true)) {
+            $sql .= ' AND r.origen = ?';
+            $params[] = $origen;
+        } else {
+            $origen = '';
+        }
+
+        if ($solicitante !== '') {
+            $sql .= ' AND (p.nombre LIKE ? OR (r.es_departamento_general = 1 AND encargado.nombre LIKE ?))';
+            $busqueda = '%' . $solicitante . '%';
+            $params[] = $busqueda;
+            $params[] = $busqueda;
         }
 
         $sql .= ' ORDER BY r.fecha_solicitud DESC, r.id DESC';
@@ -41,9 +75,23 @@ class ReporteController
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
 
+        $departamentos = $db->query(
+            "SELECT id, nombre FROM departamentos WHERE activo = 1 ORDER BY nombre"
+        )->fetchAll();
+
+        $tipos = $db->query(
+            "SELECT id, nombre FROM tipos_problema WHERE activo = 1 ORDER BY nombre"
+        )->fetchAll();
+
         view('reportes/index', [
             'reportes' => $stmt->fetchAll(),
-            'estadoFiltro' => $estado
+            'estadoFiltro' => $estado,
+            'departamentoFiltro' => $departamentoId,
+            'tipoFiltro' => $tipoId,
+            'origenFiltro' => $origen,
+            'solicitanteFiltro' => $solicitante,
+            'departamentos' => $departamentos,
+            'tipos' => $tipos
         ]);
     }
 
@@ -245,6 +293,69 @@ class ReporteController
             'archivos' => $archivos,
             'historial' => $historial
         ]);
+    }
+
+    public static function adjuntarArchivo(): void
+    {
+        Auth::requireLogin();
+        verify_csrf();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $archivoSubido = $_FILES['memorandum'] ?? null;
+
+        if ($id <= 0) {
+            flash('error', 'Reporte inválido.');
+            redirect('reportes');
+        }
+
+        if ($archivoSubido === null) {
+            flash('error', 'Seleccione un archivo PDF.');
+            header('Location: index.php?route=reportes/ver&id=' . $id);
+            exit;
+        }
+
+        $db = Database::getConnection();
+        $rutaGuardada = null;
+
+        try {
+            $stmt = $db->prepare('SELECT id FROM reportes WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+
+            if (!$stmt->fetch()) {
+                throw new RuntimeException('Reporte no encontrado.');
+            }
+
+            $archivo = guardar_memorandum($archivoSubido, $id);
+            if ($archivo === null) {
+                throw new RuntimeException('Seleccione un archivo PDF.');
+            }
+
+            $rutaGuardada = $archivo['ruta'];
+
+            $stmt = $db->prepare("
+                INSERT INTO archivos_reportes
+                (reporte_id, nombre_original, nombre_archivo, ruta, tipo_mime, tamano)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $id,
+                $archivo['nombre_original'],
+                $archivo['nombre_archivo'],
+                $archivo['ruta'],
+                $archivo['tipo_mime'],
+                $archivo['tamano']
+            ]);
+
+            flash('success', 'PDF adjuntado correctamente.');
+        } catch (Throwable $e) {
+            if ($rutaGuardada !== null && is_file($rutaGuardada)) {
+                @unlink($rutaGuardada);
+            }
+            flash('error', $e->getMessage());
+        }
+
+        header('Location: index.php?route=reportes/ver&id=' . $id);
+        exit;
     }
 
     public static function cambiarEstado(): void
