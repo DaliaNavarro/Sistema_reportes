@@ -340,3 +340,27 @@ th {
     }
 
 }
+
+.filters-panel {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 18px;
+    margin: 20px 0;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 18px;
+}
+
+.filters-grid label {
+    margin: 0;
+}
+
+@media (max-width: 800px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+}
