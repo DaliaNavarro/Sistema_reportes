@@ -13,10 +13,26 @@
     <label>Nombre<input type="text" name="nombre" required maxlength="150"></label>
     <button type="submit">Registrar</button>
 </form>
+
 <?php endif; ?>
+<div class="form-group" style="margin-bottom: 15px;">
+    <label for="buscarPersonas">Buscar persona</label>
+
+    <input
+        type="search"
+        id="buscarPersonas"
+        placeholder="Escriba nombre o departamento..."
+        autocomplete="off"
+    >
+</div>
+
+<p id="sinPersonas" style="display:none;">
+    No se encontraron personas.
+</p>
+
 
 <h2>Personas registradas</h2>
-<table>
+<table id="tablaPersonas">
 <thead><tr><th>Nombre</th><th>Departamento</th><th>Estado</th><?php if (Auth::isAdmin()): ?><th>Acciones</th><?php endif; ?></tr></thead>
 <tbody>
 <?php foreach ($personas as $persona): ?>
@@ -47,5 +63,51 @@
 <?php endforeach; ?>
 </tbody>
 </table>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const buscador = document.getElementById('buscarPersonas');
+    const tabla = document.getElementById('tablaPersonas');
+    const mensaje = document.getElementById('sinPersonas');
+
+    if (!buscador || !tabla) {
+        return;
+    }
+
+    const filas = tabla.querySelectorAll('tbody tr');
+
+    buscador.addEventListener('input', function () {
+
+        const texto = this.value
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+
+        let visibles = 0;
+
+        filas.forEach(function (fila) {
+
+            const contenido = fila.textContent
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+
+            const mostrar = contenido.includes(texto);
+
+            fila.style.display = mostrar ? '' : 'none';
+
+            if (mostrar) {
+                visibles++;
+            }
+        });
+
+        if (mensaje) {
+            mensaje.style.display =
+                visibles === 0 ? 'block' : 'none';
+        }
+    });
+});
+</script>
 
 <?php require dirname(__DIR__) . '/layout/footer.php'; ?>

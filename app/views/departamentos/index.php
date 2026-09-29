@@ -131,6 +131,27 @@
                     </button>
 
                 </form>
+                <form
+        method="post"
+        action="index.php?route=departamentos/eliminar"
+        onsubmit="return confirm('¿Está seguro de eliminar este departamento? Esta acción no se puede deshacer.');"
+        style="display:inline;"
+    >
+        <?= csrf_field() ?>
+
+        <input
+            type="hidden"
+            name="id"
+            value="<?= (int)$departamento['id'] ?>"
+        >
+
+        <button
+            type="submit"
+            class="btn btn-danger"
+        >
+            Eliminar
+        </button>
+    </form>
 
                 <form
                     method="POST"
