@@ -111,4 +111,65 @@ class DepartamentoController
 
         redirect('departamentos');
     }
+    public static function eliminar(): void
+{
+    Auth::requireAdmin();
+    verify_csrf();
+
+    $id = (int)($_POST['id'] ?? 0);
+
+    if ($id <= 0) {
+        flash('error', 'Departamento no válido.');
+        redirect('departamentos');
+    }
+
+    $db = Database::getConnection();
+
+    // Verificar personas asociadas
+    $stmt = $db->prepare("
+        SELECT COUNT(*)
+        FROM personas
+        WHERE departamento_id = ?
+    ");
+    $stmt->execute([$id]);
+
+    $personas = (int)$stmt->fetchColumn();
+
+    if ($personas > 0) {
+        flash(
+            'error',
+            'No se puede eliminar el departamento porque tiene personas asociadas.'
+        );
+        redirect('departamentos');
+    }
+
+    // Verificar reportes asociados
+    $stmt = $db->prepare("
+        SELECT COUNT(*)
+        FROM reportes
+        WHERE departamento_id = ?
+    ");
+    $stmt->execute([$id]);
+
+    $reportes = (int)$stmt->fetchColumn();
+
+    if ($reportes > 0) {
+        flash(
+            'error',
+            'No se puede eliminar el departamento porque tiene reportes registrados.'
+        );
+        redirect('departamentos');
+    }
+
+    $stmt = $db->prepare("
+        DELETE FROM departamentos
+        WHERE id = ?
+    ");
+
+    $stmt->execute([$id]);
+
+    flash('success', 'Departamento eliminado correctamente.');
+
+    redirect('departamentos');
+}
 }

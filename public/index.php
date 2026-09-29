@@ -145,6 +145,10 @@ switch ($route) {
         DepartamentoController::cambiarEstado();
         break;
 
+    case 'departamentos/eliminar':
+        DepartamentoController::eliminar();
+        break;
+
 
     /*
      * TIPOS DE SERVICIO
